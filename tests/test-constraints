@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+
+import sys
+import math
+
+from gi.repository import Clutter
+
+RECTS = {
+	"NorthWest": ["#8ae234", None], "North":  ["#73d216", None], "NorthEast": ["#4e9a06", None],
+	"West":      ["#729fcf", None], "Center": ["#3465a4", None], "East":      ["#204a87", None],
+	"SouthWest": ["#ef2929", None], "South":  ["#cc0000", None], "SouthEast": ["#a40000", None]
+}
+
+SHADER_SOURCE = """
+uniform sampler2D tex;
+uniform float factor;
+vec3 desaturate (const vec3 color, const float desaturation) {
+	const vec3 gray_conv = vec3 (0.299, 0.587, 0.114);
+	vec3 gray = vec3 (dot (gray_conv, color));
+	return vec3 (mix (color.rgb, gray, desaturation));
+}
+void main () {
+	vec4 color = cogl_color_in * texture2D (tex, vec2 (cogl_tex_coord_in[0].xy));
+	color.rgb = desaturate (color.rgb, factor);
+	cogl_color_out = color;
+}
+"""
+
+RECT_SIZE   = 128
+V_PADDING   = 32
+H_PADDING   = 32
+IS_EXPANDED = False
+
+def button_release_cb(actor, event, data):
+	global IS_EXPANDED
+
+	if not IS_EXPANDED:
+		north = (RECTS["Center"][1].get_height() + V_PADDING) * -1.0
+		south = (RECTS["Center"][1].get_height() + V_PADDING)
+		west  = (RECTS["Center"][1].get_width() + H_PADDING) * -1.0
+		east  = (RECTS["Center"][1].get_width() + H_PADDING)
+
+		RECTS["NorthWest"][1].animatev(
+			Clutter.AnimationMode.EASE_OUT_EXPO,
+			500,
+			["opacity", "@constraints.x-bind.offset", "@constraints.y-bind.offset", "reactive"],
+			[255, west, north, True]
+		)
+
+		RECTS["North"][1].animatev(
+			Clutter.AnimationMode.EASE_OUT_EXPO,
+			500,
+			["opacity", "@constraints.y-bind.offset", "reactive"],
+			[255, north, True]
+		)
+
+		RECTS["NorthEast"][1].animatev(
+			Clutter.AnimationMode.EASE_OUT_EXPO,
+			500,
+			["opacity", "@constraints.x-bind.offset", "@constraints.y-bind.offset", "reactive"],
+			[255, east, north, True]
+		)
+
+		RECTS["West"][1].animatev(
+			Clutter.AnimationMode.EASE_OUT_EXPO,
+			500,
+			["opacity", "@constraints.x-bind.offset", "reactive"],
+			[255, west, True]
+		)
+
+		RECTS["Center"][1].animatev(
+			Clutter.AnimationMode.LINEAR,
+			500,
+			["@effects.desaturate.enabled", "reactive"],
+			[True, False]
+		)
+
+		RECTS["East"][1].animatev(
+			Clutter.AnimationMode.EASE_OUT_EXPO,
+			500,
+			["opacity", "@constraints.x-bind.offset", "reactive"],
+			[255, east, True]
+		)
+
+		RECTS["SouthWest"][1].animatev(
+			Clutter.AnimationMode.EASE_OUT_EXPO,
+			500,
+			["opacity", "@constraints.x-bind.offset", "@constraints.y-bind.offset", "reactive"],
+			[255, west, south, True]
+		)
+
+		RECTS["South"][1].animatev(
+			Clutter.AnimationMode.EASE_OUT_EXPO,
+			500,
+			["opacity", "@constraints.y-bind.offset", "reactive"],
+			[255, south, True]
+		)
+
+		RECTS["SouthEast"][1].animatev(
+			Clutter.AnimationMode.EASE_OUT_EXPO,
+			500,
+			["opacity", "@constraints.x-bind.offset", "@constraints.y-bind.offset", "reactive"],
+			[255, east, south, True]
+		)
+
+	else:
+		RECTS["Center"][1].animatev(
+			Clutter.AnimationMode.LINEAR,
+			500,
+			["@effects.desaturate.enabled", "reactive"],
+			[False, True]
+		)
+
+		for rect_name, rect_data in RECTS.items():
+			rect_data[1].animatev(
+				Clutter.AnimationMode.EASE_OUT_EXPO,
+				500,
+				["opacity", "@constraints.x-bind.offset", "@constraints.y-bind.offset", "reactive"],
+				[0.0, 0.0, 0.0, False]
+			)
+
+	IS_EXPANDED = not IS_EXPANDED
+
+if __name__ == "__main__":
+	Clutter.init(sys.argv)
+
+	stage = Clutter.Stage()
+
+	stage.set_title("Shaders")
+	stage.set_user_resizable(True)
+	stage.set_size(800, 600)
+	stage.connect("destroy", lambda *a: Clutter.main_quit())
+
+	rect  = Clutter.Rectangle()
+	color = Clutter.Color()
+
+	color.from_string(RECTS["Center"][0])
+
+	rect.set_color(color)
+	rect.set_size(RECT_SIZE, RECT_SIZE)
+	rect.set_reactive(True)
+	rect.set_name("Center")
+	rect.connect("button-release-event", button_release_cb, None)
+
+	x_constraint = Clutter.AlignConstraint.new(stage, Clutter.AlignAxis.X_AXIS, 0.5)
+	y_constraint = Clutter.AlignConstraint.new(stage, Clutter.AlignAxis.Y_AXIS, 0.5)
+
+	rect.add_constraint_with_name("x-align", x_constraint)
+	rect.add_constraint_with_name("y-align", y_constraint)
+
+	effect = Clutter.ShaderEffect()
+
+	effect.set_shader_source(SHADER_SOURCE)
+	effect.set_uniform_value("tex", 0)
+	effect.set_uniform_value("factor", 0.66)
+
+	rect.add_effect_with_name("desaturate", effect)
+
+	stage.add_actor(rect)
+
+	# Keep a copy of our Center rect for later.
+	RECTS["Center"][1] = rect
+
+	for rect_name, rect_data in RECTS.items():
+		# Skip the Center rect, we've already created it.
+		if rect_name == "Center":
+			continue
+
+		color.from_string(rect_data[0])
+
+		r = Clutter.Rectangle()
+		
+		r.set_color(color)
+		r.set_opacity(0.0)
+		r.set_name(rect_name)
+
+		x_bind    = Clutter.BindConstraint.new(rect, Clutter.BindCoordinate.X, 0.0)
+		y_bind    = Clutter.BindConstraint.new(rect, Clutter.BindCoordinate.Y, 0.0)
+		size_bind = Clutter.BindConstraint.new(rect, Clutter.BindCoordinate.SIZE, 0.0)
+		
+		r.add_constraint_with_name("x-bind", x_bind)
+		r.add_constraint_with_name("y-bind", y_bind)
+		r.add_constraint_with_name("size-bind", size_bind)
+		r.connect("button-release-event", button_release_cb, None)
+
+		stage.add_actor(r)
+
+		# Keep a copy of each rect for later, like Center above.
+		rect_data[1] = r
+
+	stage.show_all()
+
+	Clutter.main()
+
