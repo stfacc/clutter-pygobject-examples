@@ -1,9 +1,18 @@
 #!/usr/bin/env python3
 
-import sys
-
 from gi.repository import Clutter, Pango
 
+# We're demonstrating a very simple Actor subclass here, whose purpose is to be as
+# close to the C-based cookbook example as possible. Ideally, you wouldn't actually
+# derive from Actor directly, but something more "intelligent" like Clutter.Box
+# itself (rather than hiding it like we've done).
+#
+# However, we demonstrate such usage here because it CAN be educational.
+#
+# One of the most important bits of information to take away from this code is how
+# we are required to prefix the "builtin" method overrides with the string "do_".
+# The EXACT reasons for this are not entirely known to me, but it has been this way
+# since the days of pygtk, and honored thusly.
 class CbButton(Clutter.Actor):
 	def __init__(self):
 		Clutter.Actor.__init__(self)
@@ -25,44 +34,53 @@ class CbButton(Clutter.Actor):
 		self.__box.set_reactive(True)
 		self.__box.add_action(self.__click)
 		self.__box.add_actor(self.__text)
+		self.__box.set_parent(self)
 
 	def set_text(self, text):
 		self.__text.set_text(text)
 
-	def get_text(self):
-		return self.__text.get_text()
-
-	def get_preferred_width(self, height):
-		return self.__box.get_preferred_width(height) + 20.0
-
-	def get_preferred_height(self, width):
-		return self.__box.get_preferred_height(width) + 20.0
-
-	def allocate(self, *args, **kargs):
-		print("in allocate...")
-
-	def paint(self, *args, **kargs):
-		print("in paint...")
+	def set_color(self, color):
+		self.__box.set_color(color)
 
 	def clicked(self, *args, **kargs):
-		print("clicked...")
+		print("You clicked the button!")
+
+	def do_get_preferred_width(self, height):
+		w = [v + 20.0 for v in self.__box.get_preferred_width(height)]
+		
+		print("get_preferred_width (for height %s): %s" % (height, w))
+
+		# BUG: Returning the listcomp from above directly will crash Python!
+		return tuple(w)
+
+	def do_get_preferred_height(self, width):
+		h = [v + 20.0 for v in self.__box.get_preferred_height(width)]
+
+		print("get_preferred_height (for width %s): %s" % (width, h))
+
+		# BUG: Returning the listcomp from above directly will crash Python!
+		return tuple(h)
+
+	def do_allocate(self, box, flags):
+		print("allocate: %s %s %s %s" % (box.x1, box.y1, box.x2, box.y2))
+
+		self.__box.allocate(box, flags)
+
+	def do_paint(self):
+		print("paint")
+
+		self.__box.paint()
 
 if __name__ == "__main__":
-	Clutter.init(sys.argv)
-
 	stage = Clutter.Stage()
 
 	stage.set_title("cb-button")
-	stage.connect("destroy", lambda *a: Clutter.main_quit())
+	stage.connect("destroy", Clutter.main_quit)
 
 	button = CbButton()
 
-	# button.set_text("Hello, World!")
-	# button.set_color(Clutter.Color.get_static(Clutter.StaticColor.GRAY))
-	
-	# print(button.get_preferred_width())
-	# print(button.get_preferred_height())
-	# print(button.get_preferred_size())
+	button.set_text("Hello, World!")
+	button.set_color(Clutter.Color.from_string("#aaaaaa"))
 
 	stage.add_actor(button)
 	stage.show_all()

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
 import math
 
 from gi.repository import Clutter
@@ -34,21 +33,19 @@ H_PADDING   = 32
 ANIM_TIME   = 750
 IS_EXPANDED = False
 
-# This function doesn't exist in the C interactive test, and just helps to simplify
-# the code a bit.
 def do_animate(rect, opacity, reactive, x, y):
-	properties = ["opacity", "reactive"]
-	values     = [opacity, reactive]
+	properties = {
+		"opacity": opacity,
+		"reactive": reactive
+	}
 
 	if not x == None:
-		properties.append("@constraints.x-bind.offset")
-		values.append(x)
+		properties["@constraints.x-bind.offset"] = x
 		
 	if not y == None:
-		properties.append("@constraints.y-bind.offset")
-		values.append(y)
+		properties["@constraints.y-bind.offset"] = y
 
-	RECTS[rect][1].animatev(Clutter.AnimationMode.EASE_OUT_EXPO, ANIM_TIME, properties, values)
+	RECTS[rect][1].animate(Clutter.AnimationMode.EASE_OUT_EXPO, ANIM_TIME, properties)
 
 def button_release_cb(actor, event, data):
 	global IS_EXPANDED
@@ -68,19 +65,19 @@ def button_release_cb(actor, event, data):
 		do_animate("South", 255, True, None, south)
 		do_animate("SouthEast", 255, True, east, south)
 
-		RECTS["Center"][1].animatev(
+		RECTS["Center"][1].animate(
 			Clutter.AnimationMode.LINEAR,
 			ANIM_TIME,
-			["@effects.desaturate.enabled", "reactive"],
-			[True, False]
+			"@effects.desaturate.enabled", True,
+			"reactive", False
 		)
 
 	else:
-		RECTS["Center"][1].animatev(
+		RECTS["Center"][1].animate(
 			Clutter.AnimationMode.LINEAR,
 			ANIM_TIME,
-			["@effects.desaturate.enabled", "reactive"],
-			[False, True]
+			"@effects.desaturate.enabled", False,
+			"reactive", True
 		)
 
 		for rect in RECTS.keys():
@@ -92,21 +89,16 @@ def button_release_cb(actor, event, data):
 	IS_EXPANDED = not IS_EXPANDED
 
 if __name__ == "__main__":
-	Clutter.init(sys.argv)
-
 	stage = Clutter.Stage()
 
 	stage.set_title("Constraints")
 	stage.set_user_resizable(True)
 	stage.set_size(800, 600)
-	stage.connect("destroy", lambda *a: Clutter.main_quit())
+	stage.connect("destroy", Clutter.main_quit)
 
-	rect  = Clutter.Rectangle()
-	color = Clutter.Color()
+	rect = Clutter.Rectangle()
 
-	color.from_string(RECTS["Center"][0])
-
-	rect.set_color(color)
+	rect.set_color(Clutter.Color.from_string(RECTS["Center"][0]))
 	rect.set_size(RECT_SIZE, RECT_SIZE)
 	rect.set_reactive(True)
 	rect.set_name("Center")
@@ -136,11 +128,9 @@ if __name__ == "__main__":
 		if rect_name == "Center":
 			continue
 
-		color.from_string(rect_data[0])
-
 		r = Clutter.Rectangle()
 		
-		r.set_color(color)
+		r.set_color(Clutter.Color.from_string(rect_data[0]))
 		r.set_opacity(0.0)
 		r.set_name(rect_name)
 

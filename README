@@ -1,1 +1,30 @@
-Empty for now until I can figure out how to use github README format. :)
+This project is simply a repository of code examples that I am working on as I
+learn Clutter and pygobject together. I have no idea (and make no assertions)
+as to whether they will be helpful for anyone else, though I will try and do my
+best to write them within such standards that they eventually get placed into a
+Gnome repository elsewhere.
+
+Here are some crucial things to bear in mind before trying to work with any of
+this code:
+
+	1) I use Python3; I just do. Eventually I will go back and resolve
+	issues with Python2.7. Moving forward and all that.
+
+	2) You will need the Clutter.py "overrides" file which, depending on
+	the date, may or may not be available on your system. To find out
+	whether or not you have it, run:
+
+	# python -c 'import gi; print(gi._overridesdir)'
+
+	...and see if the file is there. If not, you can use a copy I've
+	included in the etc directory or fetch it directly from the Gnome
+	pyclutter git repository:
+
+	http://git.gnome.org/browse/pyclutter/plain/introspection/Clutter.py?h=wip/introspection
+
+	3) The code in tests may use deprecated/unencouraged APIs. As I
+	discover culprits I will squash them, but I make no promises.
+
+	4) Besides Clutter.py, the scripts in etc are simple things I
+	personally use for debugging. Ignore them, please.
+

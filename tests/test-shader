@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
 import math
 
 from gi.repository import Clutter
@@ -229,21 +228,19 @@ def button_release_cb(actor, event, data):
 	actor.set_shader_param_float("x_step", 1.0 / np2(actor.get_height()))
 
 if __name__ == "__main__":
-	Clutter.init(sys.argv)
-
 	stage = Clutter.Stage()
 
 	stage.set_title("Shaders")
 	stage.set_color(Clutter.Color.new(0x61, 0x64, 0x8c, 0xff))
 	stage.set_size(512, 384)
-	stage.connect("destroy", lambda *a: Clutter.main_quit())
+	stage.connect("destroy", Clutter.main_quit)
 
 	# Here we create a texture-based actor from the file on disk.
 	# Our actor will toggle through shading on right/left click. Unlike the
 	# normal example, we'll start with the basic redhand to let you see how
 	# things change...
 
-	actor = Clutter.Texture.new_from_file("data/redhand.png")
+	actor = Clutter.Texture.new_from_file("../data/redhand.png")
 
 	actor.set_position(100, 100)
 	actor.set_reactive(True)
