@@ -24,6 +24,7 @@ FRAGMENT_SHADER_END = """
 FRAGMENTS = FRAGMENT_SHADER_VARS, FRAGMENT_SHADER_BEGIN, FRAGMENT_SHADER_END
 
 SHADERS = {
+	# BRIGHTNESS-CONTRAST-1
 	"brightness-contrast-1": """
 	%s
 	uniform float brightness, contrast;
@@ -37,6 +38,7 @@ SHADERS = {
 	%s
 	""" % FRAGMENTS,
 
+	# BRIGHTNESS-CONTRAST-2
 	"brightness-contrast-2": """
 	%s
 	uniform float brightness;
@@ -50,6 +52,7 @@ SHADERS = {
 	%s
 	""" % FRAGMENTS,
 
+	# BOX-BLUR-DYNA
 	"box-blur-dyna": """
 	%s
 	uniform float radius;
@@ -69,6 +72,7 @@ SHADERS = {
 	%s
 	""" % FRAGMENTS,
 
+	# BOX-BLUR
 	"box-blur": """
 	%s
 	vec4 get_rgba_rel(sampler2D tex, float dx, float dy) {
@@ -92,6 +96,7 @@ SHADERS = {
 	%s
 	""" % FRAGMENTS,
 
+	# INVERT
 	"invert": """
 	%s
 	%s
@@ -101,6 +106,7 @@ SHADERS = {
 	%s
 	""" % FRAGMENTS,
 
+	# GRAY
 	"gray": """
 	%s
 	%s
@@ -111,6 +117,7 @@ SHADERS = {
 	%s
 	""" % FRAGMENTS,
 
+	# COMBINED-MIRROR
 	"combined-mirror": """
 	%s
 	%s
@@ -123,6 +130,7 @@ SHADERS = {
 	%s
 	""" % FRAGMENTS,
 
+	# EDGE-DETECT
 	"edge-detect": """
 	%s
 	float get_avg_rel(sampler2D texB, float dx, float dy)
@@ -158,6 +166,21 @@ SHADERS = {
 	color.r = avg * color.r;
 	color.g = avg * color.g;
 	color.b = avg * color.b;
+	%s
+	""" % FRAGMENTS,
+
+	# NO-OP
+	"no-op": """
+	%s
+	%s
+	%s
+	""" % FRAGMENTS,
+
+	# VERT-LINES
+	"vert-lines": """
+	%s
+	%s
+	if(mod(gl_FragCoord.y, 3.0) >= 1.0) color *= 0.5;
 	%s
 	""" % FRAGMENTS
 }
@@ -220,7 +243,7 @@ if __name__ == "__main__":
 	# normal example, we'll start with the basic redhand to let you see how
 	# things change...
 
-	actor = Clutter.Texture.new_from_file("redhand.png")
+	actor = Clutter.Texture.new_from_file("data/redhand.png")
 
 	actor.set_position(100, 100)
 	actor.set_reactive(True)

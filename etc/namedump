@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import gi
 import gi.types
 
 from gi.repository import Clutter

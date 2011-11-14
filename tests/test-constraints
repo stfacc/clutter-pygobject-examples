@@ -29,7 +29,22 @@ void main () {
 RECT_SIZE   = 128
 V_PADDING   = 32
 H_PADDING   = 32
+ANIM_TIME   = 750
 IS_EXPANDED = False
+
+def do_animate(rect, opacity, reactive, x, y):
+	properties = ["opacity", "reactive"]
+	values     = [opacity, reactive]
+
+	if not x == None:
+		properties.append("@constraints.x-bind.offset")
+		values.append(x)
+		
+	if not y == None:
+		properties.append("@constraints.y-bind.offset")
+		values.append(y)
+
+	RECTS[rect][1].animatev(Clutter.AnimationMode.EASE_OUT_EXPO, ANIM_TIME, properties, values)
 
 def button_release_cb(actor, event, data):
 	global IS_EXPANDED
@@ -40,84 +55,35 @@ def button_release_cb(actor, event, data):
 		west  = (RECTS["Center"][1].get_width() + H_PADDING) * -1.0
 		east  = (RECTS["Center"][1].get_width() + H_PADDING)
 
-		RECTS["NorthWest"][1].animatev(
-			Clutter.AnimationMode.EASE_OUT_EXPO,
-			500,
-			["opacity", "@constraints.x-bind.offset", "@constraints.y-bind.offset", "reactive"],
-			[255, west, north, True]
-		)
-
-		RECTS["North"][1].animatev(
-			Clutter.AnimationMode.EASE_OUT_EXPO,
-			500,
-			["opacity", "@constraints.y-bind.offset", "reactive"],
-			[255, north, True]
-		)
-
-		RECTS["NorthEast"][1].animatev(
-			Clutter.AnimationMode.EASE_OUT_EXPO,
-			500,
-			["opacity", "@constraints.x-bind.offset", "@constraints.y-bind.offset", "reactive"],
-			[255, east, north, True]
-		)
-
-		RECTS["West"][1].animatev(
-			Clutter.AnimationMode.EASE_OUT_EXPO,
-			500,
-			["opacity", "@constraints.x-bind.offset", "reactive"],
-			[255, west, True]
-		)
+		do_animate("NorthWest", 255, True, west, north)
+		do_animate("North", 255, True, None, north)
+		do_animate("NorthEast", 255, True, east, north)
+		do_animate("West", 255, True, west, None)
+		do_animate("East", 255, True, east, None)
+		do_animate("SouthWest", 255, True, west, south)
+		do_animate("South", 255, True, None, south)
+		do_animate("SouthEast", 255, True, east, south)
 
 		RECTS["Center"][1].animatev(
 			Clutter.AnimationMode.LINEAR,
-			500,
+			ANIM_TIME,
 			["@effects.desaturate.enabled", "reactive"],
 			[True, False]
-		)
-
-		RECTS["East"][1].animatev(
-			Clutter.AnimationMode.EASE_OUT_EXPO,
-			500,
-			["opacity", "@constraints.x-bind.offset", "reactive"],
-			[255, east, True]
-		)
-
-		RECTS["SouthWest"][1].animatev(
-			Clutter.AnimationMode.EASE_OUT_EXPO,
-			500,
-			["opacity", "@constraints.x-bind.offset", "@constraints.y-bind.offset", "reactive"],
-			[255, west, south, True]
-		)
-
-		RECTS["South"][1].animatev(
-			Clutter.AnimationMode.EASE_OUT_EXPO,
-			500,
-			["opacity", "@constraints.y-bind.offset", "reactive"],
-			[255, south, True]
-		)
-
-		RECTS["SouthEast"][1].animatev(
-			Clutter.AnimationMode.EASE_OUT_EXPO,
-			500,
-			["opacity", "@constraints.x-bind.offset", "@constraints.y-bind.offset", "reactive"],
-			[255, east, south, True]
 		)
 
 	else:
 		RECTS["Center"][1].animatev(
 			Clutter.AnimationMode.LINEAR,
-			500,
+			ANIM_TIME,
 			["@effects.desaturate.enabled", "reactive"],
 			[False, True]
 		)
 
-		for rect_name, rect_data in RECTS.items():
-			rect_data[1].animatev(
-				Clutter.AnimationMode.EASE_OUT_EXPO,
-				500,
-				["opacity", "@constraints.x-bind.offset", "@constraints.y-bind.offset", "reactive"],
-				[0.0, 0.0, 0.0, False]
-			)
+		for rect in RECTS.keys():
+			if rect == "Center":
+				continue
+
+			do_animate(rect, 0, False, 0.0, 0.0)
 
 	IS_EXPANDED = not IS_EXPANDED
 
@@ -126,7 +92,7 @@ if __name__ == "__main__":
 
 	stage = Clutter.Stage()
 
-	stage.set_title("Shaders")
+	stage.set_title("Constraints")
 	stage.set_user_resizable(True)
 	stage.set_size(800, 600)
 	stage.connect("destroy", lambda *a: Clutter.main_quit())
