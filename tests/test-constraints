@@ -5,6 +5,8 @@ import math
 
 from gi.repository import Clutter
 
+# We store the name of the region as the dictionary key, and then keep a list of the color
+# and a reference to the created Rectangle instance.
 RECTS = {
 	"NorthWest": ["#8ae234", None], "North":  ["#73d216", None], "NorthEast": ["#4e9a06", None],
 	"West":      ["#729fcf", None], "Center": ["#3465a4", None], "East":      ["#204a87", None],
@@ -32,6 +34,8 @@ H_PADDING   = 32
 ANIM_TIME   = 750
 IS_EXPANDED = False
 
+# This function doesn't exist in the C interactive test, and just helps to simplify
+# the code a bit.
 def do_animate(rect, opacity, reactive, x, y):
 	properties = ["opacity", "reactive"]
 	values     = [opacity, reactive]
