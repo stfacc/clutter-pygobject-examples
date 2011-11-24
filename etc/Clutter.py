@@ -705,6 +705,37 @@ class Script(Clutter.Script):
             ret.append(obj)
         return ret
 
+    # This routine is borrowed from GtkBuilder:
+    # http://git.gnome.org/browse/pygobject/tree/gi/overrides/Gtk.py#n339
+    # However, it will not work until Clutter adds connect_signals_full() support to their exports.
+    def connect_signals(self, obj_or_map):
+        def _full_callback(builder, gobj, signal_name, handler_name, connect_obj, flags, obj_or_map):
+            handler = None
+            if isinstance(obj_or_map, dict):
+                handler = obj_or_map.get(handler_name, None)
+            else:
+                handler = getattr(obj_or_map, handler_name, None)
+
+            if handler is None:
+                raise AttributeError('Handler %s not found' % handler_name)
+
+            if not _callable(handler):
+                raise TypeError('Handler %s is not a method or function' % handler_name)
+
+            after = flags or GObject.ConnectFlags.AFTER
+            if connect_obj is not None:
+                if after:
+                    gobj.connect_object_after(signal_name, handler, connect_obj)
+                else:
+                    gobj.connect_object(signal_name, handler, connect_obj)
+            else:
+                if after:
+                    gobj.connect_after(signal_name, handler)
+                else:
+                    gobj.connect(signal_name, handler)
+
+        self.connect_signals_full(_full_callback, obj_or_map)
+
 Script = override(Script)
 __all__.append('Script')
 
