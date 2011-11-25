@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+
+from gi.repository import Clutter
+
+STAGE_WIDTH  = 1024
+STAGE_HEIGHT = 768
+ACTOR_WIDTH  = 128
+ACTOR_HEIGHT = 128
+COLS         = int(STAGE_WIDTH / ACTOR_WIDTH)
+ROWS         = int(STAGE_HEIGHT / ACTOR_HEIGHT)
+TOTAL        = int(ROWS * COLS)
+
+def press_event(*args):
+	pass
+
+def release_event(*args):
+	pass
+
+def enter_event(actor, event, data):
+	print("hovering...")
+	data.set_state("hover")
+
+class Rect(Clutter.Group):
+	def __init__(self, r, g, b, a):
+		Clutter.Group.__init__(self)
+
+		self.rectangle = Clutter.Rectangle(color=Clutter.Color(r, g, b, a))
+		self.hand      = Clutter.Texture(filename="../data/redhand.png")
+
+		for actor in self.rectangle, self.hand:
+			actor.set_size(ACTOR_WIDTH, ACTOR_HEIGHT)
+
+		self.add(self.rectangle, self.hand)
+
+if __name__ == "__main__":
+	stage        = Clutter.Stage()
+	layout_state = Clutter.State()
+
+	stage.set_color(Clutter.Color.from_string("#000000"))
+	stage.set_title("State Machine")
+	stage.set_size(STAGE_WIDTH, STAGE_HEIGHT)
+	stage.connect("destroy", Clutter.main_quit)
+	stage.connect("button-press-event", press_event, layout_state)
+	stage.connect("button-release-event", release_event, layout_state)
+
+	for i in range(1): #TOTAL):
+		row = i / COLS
+		col = i % COLS
+
+		actor = Rect(
+			255 * (1.0 * col / COLS),
+			50,
+                        255 * (1.0 * row / ROWS),
+			255
+		)
+
+		actor.set_position(320, 240)
+		actor.set_reactive(True)
+		# actor.add_effect_with_name("fade", Clutter.DesaturateEffect.new(0.0))
+
+		state = Clutter.State()
+		
+		state.set_key("", "hover", actor, "rotation-angle-z", Clutter.AnimationMode.LINEAR, 20.0)
+		state.set_duration(None, None, 500)
+
+		actor.set_data("hover-state-machine", state)
+		actor.connect("enter-event", enter_event, state)
+
+		stage.add_actor(actor)
+
+	stage.show_all()
+
+	Clutter.main()
+

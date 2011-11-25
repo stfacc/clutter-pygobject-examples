@@ -240,7 +240,7 @@ if __name__ == "__main__":
 	# normal example, we'll start with the basic redhand to let you see how
 	# things change...
 
-	actor = Clutter.Texture.new_from_file("../data/redhand.png")
+	actor = Clutter.Texture(filename="../data/redhand.png")
 
 	actor.set_position(100, 100)
 	actor.set_reactive(True)
