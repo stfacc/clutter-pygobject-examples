@@ -10,17 +10,22 @@ COLS         = int(STAGE_WIDTH / ACTOR_WIDTH)
 ROWS         = int(STAGE_HEIGHT / ACTOR_HEIGHT)
 TOTAL        = int(ROWS * COLS)
 
-def press_event(*args):
-	pass
+def enter_event(actor, event, state):
+	print("I am hovering!")
 
-def release_event(*args):
-	pass
+	state.set_state("hover")
 
-def enter_event(actor, event, data):
-	print("hovering...")
-	data.set_state("hover")
+	return True
 
-class Rect(Clutter.Group):
+def leave_event(actor, event, state):
+	print("I am going normal...")
+	
+	state.set_state("normal")
+
+	return True
+
+"""
+class Group(Clutter.Group):
 	def __init__(self, r, g, b, a):
 		Clutter.Group.__init__(self)
 
@@ -31,17 +36,24 @@ class Rect(Clutter.Group):
 			actor.set_size(ACTOR_WIDTH, ACTOR_HEIGHT)
 
 		self.add(self.rectangle, self.hand)
+"""
+
+class Rect(Clutter.Rectangle):
+	def __init__(self, r, g, b, a):
+		Clutter.Rectangle.__init__(self, color=Clutter.Color(r, g, b, a))
+		
+		self.set_size(ACTOR_WIDTH, ACTOR_HEIGHT)
 
 if __name__ == "__main__":
-	stage        = Clutter.Stage()
-	layout_state = Clutter.State()
+	stage = Clutter.Stage()
 
 	stage.set_color(Clutter.Color.from_string("#000000"))
 	stage.set_title("State Machine")
 	stage.set_size(STAGE_WIDTH, STAGE_HEIGHT)
 	stage.connect("destroy", Clutter.main_quit)
-	stage.connect("button-press-event", press_event, layout_state)
-	stage.connect("button-release-event", release_event, layout_state)
+	
+	# stage.connect("button-press-event", press_event, layout_state)
+	# stage.connect("button-release-event", release_event, layout_state)
 
 	for i in range(1): #TOTAL):
 		row = i / COLS
@@ -60,11 +72,14 @@ if __name__ == "__main__":
 
 		state = Clutter.State()
 		
-		state.set_key("", "hover", actor, "rotation-angle-z", Clutter.AnimationMode.LINEAR, 20.0)
+		state.set_key("", "normal", actor, "rotation-angle-z", Clutter.AnimationMode.LINEAR, 0.0)
+		state.set_key("", "hover", actor, "rotation-angle-z", Clutter.AnimationMode.LINEAR, 10.0)
 		state.set_duration(None, None, 500)
+		state.set_state("normal")
 
 		actor.set_data("hover-state-machine", state)
 		actor.connect("enter-event", enter_event, state)
+		actor.connect("leave-event", leave_event, state)
 
 		stage.add_actor(actor)
 
