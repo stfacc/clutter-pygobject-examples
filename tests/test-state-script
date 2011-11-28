@@ -10,17 +10,16 @@ class MyScript(Clutter.Script):
 		Clutter.Script.__init__(self)
 
 		self.load_from_file(path)
+		self.connect_signals(self)
 
-		# TODO: File bug.
-		# self.connect_signals(self)
-
-	def on_button_press(self, actor, event, data):
+	def on_button_press(self, actor, event):
 		print("Button pressed!")
 
 if __name__ == "__main__":
-	print("This example will not work until connect_signals_all() is implemented.")
+	if not Clutter.VERSION_S == "1.9.3":
+		print("This example will not work until you're using Clutter 1.9.3+")
 
-	sys.exit(0)
+		sys.exit(0)
 
 	stage = Clutter.Stage()
 
