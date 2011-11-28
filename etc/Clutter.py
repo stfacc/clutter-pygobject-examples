@@ -30,6 +30,60 @@ Clutter = modules['Clutter']._introspection_module
 __all__ = []
 
 
+if sys.version_info >= (3, 0):
+    _basestring = str
+    _callable = lambda c: hasattr(c, '__call__')
+else:
+    _basestring = basestring
+    _callable = callable
+
+
+def _gvalue_from_python(value_type, v):
+    # XXX: A similar function is also in Gtk.py, but IMHO this should
+    # live in a GObject.Value override. Either as a GValue classmethod
+    # or the GValue constructor.
+    value = GObject.Value()
+    value.init(value_type)
+    if value_type == GObject.TYPE_INT:
+        value.set_int(int(v))
+    elif value_type == GObject.TYPE_UINT:
+        value.set_uint(int(v))
+    elif value_type == GObject.TYPE_CHAR:
+        value.set_char(int(v))
+    elif value_type == GObject.TYPE_UCHAR:
+        value.set_uint(int(v))
+    elif value_type == GObject.TYPE_FLOAT:
+        value.set_float(float(v))
+    elif value_type == GObject.TYPE_DOUBLE:
+        value.set_double(float(v))
+    elif value_type == GObject.TYPE_LONG:
+        value.set_long(long(v))
+    elif value_type == GObject.TYPE_ULONG:
+        value.set_ulong(long(v))
+    elif value_type == GObject.TYPE_INT64:
+        value.set_int64(long(v))
+    elif value_type == GObject.TYPE_UINT64:
+        value.set_uint64(long(v))
+    elif value_type == GObject.TYPE_BOOLEAN:
+        value.set_boolean(bool(v))
+    elif value_type == GObject.TYPE_STRING:
+        if isinstance(v, str):
+            v = str(v)
+        elif sys.version_info < (3, 0):
+            if isinstance(v, unicode):
+                v = v.encode('UTF-8')
+            else:
+                raise ValueError("Expected string or unicode for property " + \
+                        "%s but got %s%s" % (prop_name, v, type(v)))
+        else:
+            raise ValueError("Expected string or unicode for property " + \
+                    "%s but got %s%s" % (prop_name, v, type(v)))
+        value.set_string(str(v))
+    else:
+        return v
+    return value
+
+
 class Color(Clutter.Color):
     def __new__(cls, *args, **kwargs):
         return Clutter.Color.__new__(cls)
@@ -48,37 +102,43 @@ class Color(Clutter.Color):
     def __len__(self):
         return 4
 
-    def __getitem__(self, index):
-        if index == 0:
-            return self.red
-        elif index == 1:
-            return self.green
-        elif index == 2:
-            return self.blue
-        elif index == 3:
-            return self.alpha
-        elif isinstance(index, slice):
-            raise TypeError("sequence index must be integer, not 'slice'")
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            if key == 0:
+                return self.red
+            elif key == 1:
+                return self.green
+            elif key == 2:
+                return self.blue
+            elif key == 3:
+                return self.alpha
+            else:
+                raise IndexError("index out of range")
         else:
-            raise IndexError("index out of range")
+            raise TypeError("sequence index must be integer")
 
     def __setitem__(self, index, value):
-        if index == 0:
-            self.red = value
-        elif index == 1:
-            self.green = value
-        elif index == 2:
-            self.blue = value
-        elif index == 3:
-            self.alpha = value
+        if isinstance(key, int):
+            if key == 0:
+                self.red = value
+            elif key == 1:
+                self.green = value
+            elif key == 2:
+                self.blue = value
+            elif key == 3:
+                self.alpha = value
+            else:
+                raise IndexError("index out of range")
         else:
-            raise IndexError("index out of range")
+            raise TypeError("sequence index must be integer")
 
     def __eq__(self, other):
-        return self.equal(other)
+        return self.red == other.red and self.green == other.green and \
+                self.blue == other.blue and self.alpha == other.alpha
 
     def __ne__(self, other):
-        return not self.equal(other)
+        return self.red != other.red or self.green != other.green or \
+                self.blue != other.blue or self.alpha != other.alpha
 
     @classmethod
     def from_string(cls, string):
@@ -120,37 +180,53 @@ class ActorBox(Clutter.ActorBox):
     def __len__(self):
         return 4
 
-    def __getitem__(self, index):
-        if index == 0:
-            return self.x1
-        elif index == 1:
-            return self.y1
-        elif index == 2:
-            return self.x2
-        elif index == 3:
-            return self.y2
-        elif isinstance(index, slice):
-            raise TypeError("sequence index must be integer, not 'slice'")
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            if key == 0:
+                return self.x1
+            elif key == 1:
+                return self.y1
+            elif key == 2:
+                return self.x2
+            elif key == 3:
+                return self.y2
+            else:
+                raise IndexError("index out of range")
         else:
-            raise IndexError("index out of range")
+            raise TypeError("sequence index must be integer")
 
-    def __setitem__(self, index, value):
-        if index == 0:
-            self.x1 = value
-        elif index == 1:
-            self.y1 = value
-        elif index == 2:
-            self.x2 = value
-        elif index == 3:
-            self.y2 = value
+    def __setitem__(self, key, value):
+        if isinstance(key, int):
+            if key == 0:
+                self.x1 = value
+            elif key == 1:
+                self.y1 = value
+            elif key == 2:
+                self.x2 = value
+            elif key == 3:
+                self.y2 = value
+            else:
+                raise IndexError("index out of range")
         else:
-            raise IndexError("index out of range")
+            raise TypeError("sequence index must be integer")
 
     def __eq__(self, other):
-        return self.equal(other)
+        if isinstance(other, list):
+            return list(self) == other
+        elif isinstance(other, tuple):
+            return tuple(self) == other
+        elif isinstance(other, ActorBox):
+            return self.equal(other)
+        return False
 
     def __ne__(self, other):
-        return not self.equal(other)
+        if isinstance(other, list):
+            return list(self) != other
+        elif isinstance(other, tuple):
+            return tuple(self) != other
+        elif isinstance(other, ActorBox):
+            return self.equal(other)
+        return False
 
     @property
     def size(self):
@@ -184,33 +260,49 @@ class Vertex(Clutter.Vertex):
     def __len__(self):
         return 3
 
-    def __getitem__(self, index):
-        if index == 0:
-            return self.x
-        elif index == 1:
-            return self.y
-        elif index == 2:
-            return self.z
-        elif isinstance(index, slice):
-            raise TypeError("sequence index must be integer, not 'slice'")
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            if key == 0:
+                return self.x
+            elif key == 1:
+                return self.y
+            elif key == 2:
+                return self.z
+            else:
+                raise IndexError("index out of range")
         else:
-            raise IndexError("index out of range")
+            raise TypeError("sequence index must be integer")
 
-    def __setitem__(self, index, value):
-        if index == 0:
-            self.x = value
-        elif index == 1:
-            self.y = value
-        elif index == 2:
-            self.y = value
+    def __setitem__(self, key, value):
+        if isinstance(key, int):
+            if key == 0:
+                self.x = value
+            elif key == 1:
+                self.y = value
+            elif key == 2:
+                self.y = value
+            else:
+                raise IndexError("index out of range")
         else:
-            raise IndexError("index out of range")
+            raise TypeError("sequence index must be integer")
 
     def __eq__(self, other):
-        return self.equal(other)
+        if isinstance(other, list):
+            return list(self) == other
+        elif isinstance(other, tuple):
+            return tuple(self) == other
+        elif isinstance(other, Vertex):
+            return self.equal(other)
+        return False
 
     def __ne__(self, other):
-        return not self.equal(other)
+        if isinstance(other, list):
+            return list(self) != other
+        elif isinstance(other, tuple):
+            return tuple(self) != other
+        elif isinstance(other, Vertex):
+            return not self.equal(other)
+        return False
 
 Vertex = override(Vertex)
 __all__.append('Vertex')
@@ -234,35 +326,46 @@ class Geometry(Clutter.Geometry):
     def __len__(self):
         return 4
 
-    def __getitem__(self, index):
-        if index == 0:
-            return self.x
-        elif index == 1:
-            return self.y
-        elif index == 2:
-            return self.width
-        elif index == 3:
-            return self.height
-        elif isinstance(index, slice):
-            raise TypeError("sequence index must be integer, not 'slice'")
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            if key == 0:
+                return self.x
+            elif key == 1:
+                return self.y
+            elif key == 2:
+                return self.width
+            elif key == 3:
+                return self.height
+            else:
+                raise IndexError("index out of range")
         else:
-            raise IndexError("index out of range")
+            raise TypeError("sequence index must be integer")
 
-    def __setitem__(self, index, value):
-        if index == 0:
-            self.x = value
-        elif index == 1:
-            self.y = value
-        elif index == 2:
-            self.width = value
-        elif index == 3:
-            self.height = value
+    def __setitem__(self, key, value):
+        if isinstance(key, int):
+            if key == 0:
+                self.x = value
+            elif key == 1:
+                self.y = value
+            elif key == 2:
+                self.width = value
+            elif key == 3:
+                self.height = value
+            else:
+                raise IndexError("index out of range")
         else:
-            raise IndexError("index out of range")
+            raise TypeError("sequence index must be integer")
 
     def __eq__(self, other):
-        return self.x == other.x and self.y == other.y and \
-                self.width == other.width and self.height == other.height
+        if isinstance(other, list):
+            return list(self) == other
+        elif isinstance(other, tuple):
+            return tuple(self) == other
+        elif isinstance(other, Geometry):
+            return (self.x == other.x and self.y == other.y and
+                    self.width == other.width and self.height == other.height)
+        else:
+            return False
 
     def __ne__(self, other):
         return self.x != other.x or self.y != other.y or \
@@ -270,6 +373,53 @@ class Geometry(Clutter.Geometry):
 
 Geometry = override(Geometry)
 __all__.append('Geometry')
+
+
+class Knot(Clutter.Knot):
+    def __new__(cls, *args, **kwargs):
+        return Clutter.Knot.__new__(cls)
+
+    def __init__(self, x=0, y=0):
+        Clutter.Knot.__init__(self)
+        self.x = x
+        self.y = y
+
+    def __repr__(self):
+        return '<Clutter.Knot(x=%d, y=%d)>' % (self.x, self.y)
+
+    def __len__(self):
+        return 2
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            if key == 0:
+                return self.x
+            elif key == 1:
+                return self.y
+            else:
+                raise IndexError("index out of range")
+        else:
+            raise TypeError("sequence index must be integer")
+
+    def __setitem__(self, key, value):
+        if isinstance(key, int):
+            if key == 0:
+                self.x = value
+            elif key == 1:
+                self.y = value
+            else:
+                raise IndexError("index out of range")
+        else:
+            raise TypeError("sequence index must be integer")
+
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
+
+    def __ne__(self, other):
+        return self.x != other.x or self.y != other.y
+
+Knot = override(Knot)
+__all__.append('Knot')
 
 
 class Event(Clutter.Event):
@@ -353,7 +503,7 @@ class Event(Clutter.Event):
                     actor_name(self.get_related()), self.get_time())
         elif self.type() == Clutter.EventType.SCROLL:
             return ("<Scroll %d at (%d,%d); modifier: %s; time: %d; " +
-                    "source: %s>") % ( self.scroll.direction.value_nick,
+                    "source: %s>") % (self.scroll.direction.value_nick,
                             self.scroll.x, self.scroll.y, self.get_time(),
                             actor_name(self.get_source()))
         elif self.type() == Clutter.EventType.STAGE_STATE:
@@ -484,14 +634,55 @@ class Container(Clutter.Container):
     def __len__(self):
         return len(self.get_children())
 
+    def __bool__(self):
+        return True
+
+    # alias for Python 2.x object protocol
+    __nonzero__ = __bool__
+
     def __contains__(self, actor):
         return actor in self.get_children()
 
     def __iter__(self):
         return iter(self.get_children())
 
-    def __getitem__(self, index):
-        return self.get_children()[index]
+    def __getitem__(self, key):
+        children = self.get_children()
+        n_children = len(children)
+        if isinstance(key, int):
+            if key < 0:
+                key += n_children
+            if key < 0 or key >= n_children:
+                raise IndexError("index out of range: %d" % key)
+            return children[key]
+        elif isinstance(key, slice):
+            start, stop, step = key.indices(n_children)
+            ret = []
+            for i in range(start, stop, step):
+                ret.append(children[i])
+            return ret
+        else:
+            raise TypeError("indices must be integer or slice")
+
+    def __setitem__(self, key, value):
+        children = self.get_children()
+        n_children = len(children)
+        if isinstance(key, int):
+            if key < 0:
+                key += n_children
+            if key >= n_children:
+                raise IndexError("index out of range: %d" % key)
+            old = children[key]
+            if key < n_children:
+                silbing = children[key + 1]
+            else:
+                silbing = None
+            self.remove(old)
+            self.add(value)
+            if silbing:
+                self.lower_child(value, silbing)
+        else:
+            raise TypeError("indices must be integer")
 
     def add(self, *actors):
         for actor in actors:
@@ -553,7 +744,7 @@ __all__.append('Text')
 
 
 class CairoTexture(Clutter.CairoTexture):
-    def __init__(self, surface_width, surface_height, **kwargs):
+    def __init__(self, surface_width=0, surface_height=0, **kwargs):
         Clutter.CairoTexture.__init__(self, surface_width=surface_width,
                                       surface_height=surface_height, **kwargs)
 
@@ -591,7 +782,7 @@ class Box(Clutter.Box, Actor):
         layout_manager = self.get_layout_manager()
         if layout_manager:
             for k, v in kwargs.items():
-                layout_manager.child_set_property(actor, k, v)
+                layout_manager.child_set_property(self, actor, k, v)
 
     def pack_after(self, actor, silbing, **kwargs):
         self.add_actor(actor)
@@ -599,7 +790,7 @@ class Box(Clutter.Box, Actor):
         layout_manager = self.get_layout_manager()
         if layout_manager:
             for k, v in kwargs.items():
-                layout_manager.child_set_property(actor, k, v)
+                layout_manager.child_set_property(self, actor, k, v)
 
     def pack_before(self, actor, silbing, **kwargs):
         self.add_actor(actor)
@@ -607,7 +798,7 @@ class Box(Clutter.Box, Actor):
         layout_manager = self.get_layout_manager()
         if layout_manager:
             for k, v in kwargs.items():
-                layout_manager.child_set_property(actor, k, v)
+                layout_manager.child_set_property(self, actor, k, v)
 
 Box = override(Box)
 __all__.append('Box')
@@ -618,28 +809,121 @@ class Model(Clutter.Model):
         if len(args) < 2 or len(args) % 2:
             raise ValueError("Clutter.Model.insert needs at least one " +
                     "column / value pair")
-            for column, value in zip(args[::2], args[1::2]):
-                self.insert_value(row, column, value)
+        for column, value in zip(args[::2], args[1::2]):
+            value = _gvalue_from_python(self.get_column_type(column), value)
+            self.insert_value(row, column, value)
 
     def append(self, *args):
         if len(args) < 2 or len(args) % 2:
             raise ValueError("Clutter.Model.append needs at least one " +
                     "column / value pair")
-            row = self.get_n_rows()
+        row = self.get_n_rows()
         self.insert(row, *args)
 
     def prepend(self, *args):
         if len(args) < 2 or len(args) % 2:
             raise ValueError("Clutter.Model.prepend needs at least one " +
                     "column / value pair")
-        # FIXME: This won't work
-        self.insert(-1, *args)
+        columns = []
+        values = []
+        for column, value in zip(args[::2], args[1::2]):
+            value = _gvalue_from_python(self.get_column_type(column), value)
+            columns.append(column)
+            values.append(value)
+        self.prependv(columns, values)
+
+    def __repr__(self):
+        return '<Clutter.%s rows: %d; columns: %d>' % (self.__class__.__name__,
+                self.get_n_rows(), self.get_n_columns())
+
+    def __len__(self):
+        return self.get_n_rows()
+
+    def __bool__(self):
+        return True
+
+    # alias for Python 2.x object protocol
+    __nonzero__ = __bool__
+
+    def __getitem__(self, key):
+        n_rows = self.get_n_rows()
+        if isinstance(key, int):
+            if key < 0:
+                key += n_rows
+            if key < 0 or key >= n_rows:
+                raise IndexError("Row index is out of bounds: %d" % key)
+            return self.get_iter_at_row(key)
+        elif isinstance(key, slice):
+            start, stop, step = key.indices(n_rows)
+            ret = []
+            for i in range(start, stop, step):
+                ret.append(self.get_iter_at_row(i))
+            return ret
+        else:
+            raise TypeError("indices must be integer or slice")
 
 Model = override(Model)
 __all__.append('Model')
 
 
-class ListModel(Clutter.ListModel):
+class ModelIter(Clutter.ModelIter):
+    def __len__(self):
+        return self.get_model().get_n_columns()
+
+    def __str__(self):
+        values = ''
+        for i in range(self.get_model().get_n_columns()):
+            values += '%d=%s; ' % (i, self.get_value(i))
+        return '<Clutter.ModelIter row %d; %s>' % (self.get_row(), values)
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self.get_value(key)
+        elif isinstance(key, slice):
+            model = self.get_model()
+            start, stop, step = key.indices(model.get_n_columns())
+            ret = []
+            for i in range(start, stop, step):
+                ret.append(self.get_value(i))
+            return ret
+        elif isinstance(key, str):
+            model = self.get_model()
+            for i in range(model.get_n_columns()):
+                name = model.get_column_name(i)
+                if key == name:
+                    return self.get_value(i)
+            raise KeyError("no column named '%s'" % key)
+        else:
+            raise TypeError("index must be value or slice")
+
+    def __setitem__(self, key, value):
+        if isinstance(key, int):
+            self.set_value(key, value)
+        elif isinstance(key, slice):
+            model = self.get_model()
+            start, stop, step = key.indices(model.get_n_columns())
+            for i in range(start, stop, step):
+                self.set_value(i, value)
+        elif isinstance(key, str):
+            model = self.get_model()
+            for i in range(model.get_n_columns()):
+                name = model.get_column_name(i)
+                if key == name:
+                    self.set_value(i, value)
+                    return
+            raise KeyError("no column named '%s'" % key)
+        else:
+            raise TypeError("index must be int, slice or string")
+
+    @property
+    def model(self):
+        return self.get_model()
+
+ModelIter = override(ModelIter)
+__all__.append('ModelIter')
+
+
+class ListModel(Clutter.ListModel, Model):
     def __init__(self, *args):
         Clutter.ListModel.__init__(self)
         if len(args) < 2 or len(args) % 2:
@@ -667,7 +951,10 @@ __all__.append('Timeline')
 class Alpha(Clutter.Alpha):
     def __init__(self, timeline=None, mode=Clutter.AnimationMode.LINEAR,
             **kwargs):
-        Clutter.Alpha.__init__(self, timeline=timeline, mode=mode, **kwargs)
+        Clutter.Alpha.__init__(self, timeline=timeline, **kwargs)
+        # FIXME: Setting :mode doesn't work via properties
+        if mode != Clutter.AnimationMode.CUSTOM_MODE:
+            self.set_mode(mode)
 
 Alpha = override(Alpha)
 __all__.append('Alpha')
@@ -678,6 +965,7 @@ class Path(Clutter.Path):
         Clutter.Path.__init__(self)
         if description:
             self.set_description(description)
+
 
 Path = override(Path)
 __all__.append('Path')
@@ -698,6 +986,9 @@ __all__.append('BehaviourPath')
 
 
 class Script(Clutter.Script):
+    def load_from_data(self, data, length=-1):
+        return Clutter.Script.load_from_data(self, data, length)
+
     def get_objects(self, *objects):
         ret = []
         for name in objects:
@@ -705,11 +996,9 @@ class Script(Clutter.Script):
             ret.append(obj)
         return ret
 
-    # This routine is borrowed from GtkBuilder:
-    # http://git.gnome.org/browse/pygobject/tree/gi/overrides/Gtk.py#n339
-    # However, it will not work until Clutter adds connect_signals_full() support to their exports.
     def connect_signals(self, obj_or_map):
-        def _full_callback(builder, gobj, signal_name, handler_name, connect_obj, flags, obj_or_map):
+        def _full_callback(builder, gobj, signal_name, handler_name,
+                connect_obj, flags, obj_or_map):
             handler = None
             if isinstance(obj_or_map, dict):
                 handler = obj_or_map.get(handler_name, None)
@@ -720,12 +1009,14 @@ class Script(Clutter.Script):
                 raise AttributeError('Handler %s not found' % handler_name)
 
             if not _callable(handler):
-                raise TypeError('Handler %s is not a method or function' % handler_name)
+                raise TypeError('Handler %s is not a method or function' %
+                        handler_name)
 
             after = flags or GObject.ConnectFlags.AFTER
             if connect_obj is not None:
                 if after:
-                    gobj.connect_object_after(signal_name, handler, connect_obj)
+                    gobj.connect_object_after(signal_name, handler,
+                            connect_obj)
                 else:
                     gobj.connect_object(signal_name, handler, connect_obj)
             else:
@@ -759,74 +1050,35 @@ Shader = override(Shader)
 __all__.append('Shader')
 
 
-def _gvalue_from_python(obj, prop_name, v):
-    try:
-        pspec = getattr(obj.__class__.props, prop_name)
-    except AttributeError:
-        raise AttributeError("Objects of type %s don't have a property '%s" %
-                             (type(obj), prop_name))
-    value = GObject.Value()
-    value.init(pspec.value_type)
-    if pspec.value_type == GObject.TYPE_INT:
-        value.set_int(int(v))
-    elif pspec.value_type == GObject.TYPE_UINT:
-        value.set_uint(int(v))
-    elif pspec.value_type == GObject.TYPE_CHAR:
-        value.set_char(int(v))
-    elif pspec.value_type == GObject.TYPE_UCHAR:
-        value.set_uint(int(v))
-    elif pspec.value_type == GObject.TYPE_FLOAT:
-        value.set_float(float(v))
-    elif pspec.value_type == GObject.TYPE_DOUBLE:
-        value.set_double(float(v))
-    elif pspec.value_type == GObject.TYPE_LONG:
-        value.set_long(long(v))
-    elif pspec.value_type == GObject.TYPE_ULONG:
-        value.set_ulong(long(v))
-    elif pspec.value_type == GObject.TYPE_INT64:
-        value.set_int64(long(v))
-    elif pspec.value_type == GObject.TYPE_UINT64:
-        value.set_uint64(long(v))
-    elif pspec.value_type == GObject.TYPE_BOOLEAN:
-        value.set_boolean(bool(v))
-    elif pspec.value_type == GObject.TYPE_STRING:
-        if isinstance(v, str):
-            v = str(v)
-        elif sys.version_info < (3, 0):
-            if isinstance(v, unicode):
-                v = v.encode('UTF-8')
-            else:
-                raise ValueError("Expected string or unicode for property " + \
-                        "%s but got %s%s" % (prop_name, v, type(v)))
-        else:
-            raise ValueError("Expected string or unicode for property " + \
-                    "%s but got %s%s" % (prop_name, v, type(v)))
-        value.set_string(str(v))
-    else:
-        return v
-    return value
-
-
 class Animator(Clutter.Animator):
-    def set_key(self, obj, prop, mode, progress, value):
-        return Clutter.Animator.set_key(self, obj, prop, mode, progress,
-                _gvalue_from_python(obj, prop, value))
+    def set_key(self, obj, property_name, mode, progress, value):
+        try:
+            pspec = getattr(obj.__class__.props, property_name)
+        except AttributeError:
+            raise AttributeError(("Objects of type '%s' don't have a " +
+                "property '%s'") % (type(obj), property_name))
+        return Clutter.Animator.set_key(self, obj, property_name, mode,
+                progress, _gvalue_from_python(pspec.value_type, value))
 
 
 Animator = override(Animator)
 __all__.append('Animator')
 
-
 class State(Clutter.State):
-    def set_key(self, source_state, target_state, obj, prop, mode,
+    def set_key(self, source_state, target_state, obj, property_name, mode,
                 value, pre_delay=0.0, post_delay=0.0):
+        try:
+            pspec = getattr(obj.__class__.props, property_name)
+        except AttributeError:
+            raise AttributeError(("Objects of type '%s' don't have a " +
+                "property '%s'") % (type(obj), property_name))
         return Clutter.State.set_key(self, source_state, target_state, obj,
-                prop, mode, _gvalue_from_python(obj, prop, value),
+                property_name, mode,
+                _gvalue_from_python(pspec.value_type, value),
                 pre_delay, post_delay)
 
 State = override(State)
 __all__.append('State')
-
 
 # override the main_quit function to ignore additional arguments. This enables
 # common stuff like stage.connect('destroy', Clutter.main_quit)
