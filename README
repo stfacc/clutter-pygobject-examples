@@ -28,3 +28,6 @@ this code:
 	4) Besides Clutter.py, the scripts in etc are simple things I
 	personally use for debugging. Ignore them, please.
 
+	5) I continually track the git master branch. In fact, some of the tests
+	won't work at all unless you're also pulling from master.
+

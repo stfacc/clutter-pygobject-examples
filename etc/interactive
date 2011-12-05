@@ -3,10 +3,8 @@
 import sys
 import IPython
 
-from gi.repository import Clutter, Gtk, Gdk, GObject, cairo
+from gi.repository import Clutter, GObject, cairo, Cogl
 
 if __name__ == "__main__":
-	Clutter.init(sys.argv)
-
 	IPython.embed()
 
