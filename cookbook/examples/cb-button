@@ -14,12 +14,12 @@ from gi.repository import Clutter, Pango, GObject
 # The EXACT reasons for this are not entirely known to me, but it has been this way
 # since the days of pygtk, and honored thusly.
 class CbButton(Clutter.Actor):
-	# define a "clicked" signal
+	# Define a "clicked" signal that our custom actor can emit.
 	__gsignals__ = {
 		"clicked": (GObject.SIGNAL_RUN_LAST, None, ())
 	}
 
-	# define a "text" property
+	# Demonstrate defining a GObject.property member data for this object.
 	def set_text(self, value):
 		self.__text = value
 
@@ -33,24 +33,25 @@ class CbButton(Clutter.Actor):
 	def __init__(self):
 		Clutter.Actor.__init__(self)
 
-		self.set_reactive(True)
-
-		self.__text = None
+		self.__text  = None
+		self.__click = Clutter.ClickAction()
+		self.__child = Clutter.Box()
 		self.__label = Clutter.Text()
+		
 		self.__label.set_line_alignment(Pango.Alignment.CENTER)
 		self.__label.set_ellipsize(Pango.EllipsizeMode.END)
 
-		self.__click = Clutter.ClickAction()
-		self.add_action(self.__click)
 		self.__click.connect("clicked", self.clicked)
 
-		self.__child = Clutter.Box()
 		self.__child.set_layout_manager(Clutter.BinLayout.new(
 			Clutter.BinAlignment.CENTER,
 			Clutter.BinAlignment.CENTER
 		))
 		self.__child.add_actor(self.__label)
 		self.__child.set_parent(self)
+
+		self.set_reactive(True)
+		self.add_action(self.__click)
 
 	def set_background_color(self, color):
 		self.__child.set_color(color)
@@ -79,11 +80,13 @@ class CbButton(Clutter.Actor):
 
 	def do_allocate(self, box, flags):
 		print("allocate: %s %s %s %s" % (box.x1, box.y1, box.x2, box.y2))
-		child_box = Clutter.ActorBox()
+		
+		child_box    = Clutter.ActorBox()
 		child_box.x1 = 0
 		child_box.y1 = 0
 		child_box.x2 = box.get_width()
 		child_box.y2 = box.get_height()
+		
 		self.__child.allocate(child_box, flags)
 
 		Clutter.Actor.do_allocate(self, box, flags)
@@ -91,13 +94,12 @@ class CbButton(Clutter.Actor):
 	def do_paint(self):
 		self.__child.paint()
 
-def clicked(self):
-	print("Clicked!")
-	if self.text == "hello":
-		self.text = "world"
-	else:
-		self.text = "hello"
+def on_click(button):
+	if button.text == "hello":
+		button.text = "world"
 
+	else:
+		button.text = "hello"
 
 if __name__ == "__main__":
 	stage = Clutter.Stage()
@@ -107,15 +109,13 @@ if __name__ == "__main__":
 	stage.connect("destroy", Clutter.main_quit)
 
 	button = CbButton()
+	
 	button.set_text("hello")
-
 	button.set_text_color(Clutter.Color.from_string("#ffffff"))
 	button.set_background_color(Clutter.Color.from_string("#888800"))
-
-	button.connect("clicked", clicked)
-
 	button.add_constraint(Clutter.AlignConstraint.new(stage, Clutter.AlignAxis.X_AXIS, 0.5))
 	button.add_constraint(Clutter.AlignConstraint.new(stage, Clutter.AlignAxis.Y_AXIS, 0.5))
+	button.connect("clicked", on_click)
 
 	stage.add_actor(button)
 	stage.show()
