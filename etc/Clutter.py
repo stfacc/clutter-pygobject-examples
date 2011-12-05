@@ -551,6 +551,8 @@ class Actor(Clutter.Actor):
                     'or {"property": value, "property", value}')
 
         for prop, value in properties:
+            pspec = getattr(self.__class__.props, prop)
+            value = _gvalue_from_python(pspec.value_type, value)
             if not isinstance(prop, str):
                 raise TypeError('A property must be a string, got %s' %
                         type(prop))
