@@ -59,7 +59,6 @@ if __name__ == "__main__":
 	stage.set_title("State Machine")
 	stage.set_size(STAGE_WIDTH, STAGE_HEIGHT)
 	stage.connect("destroy", Clutter.main_quit)
-	
 	stage.connect("button-press-event", press_event, layout_state)
 	stage.connect("button-release-event", release_event, layout_state)
 
