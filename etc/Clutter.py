@@ -502,9 +502,9 @@ class Event(Clutter.Event):
                     actor_name(self.get_source()),
                     actor_name(self.get_related()), self.get_time())
         elif self.type() == Clutter.EventType.SCROLL:
-            return ("<Scroll %d at (%d,%d); modifier: %s; time: %d; " +
+            return ("<Scroll %s at (%d,%d); modifier: %s; time: %d; " +
                     "source: %s>") % (self.scroll.direction.value_nick,
-                            self.scroll.x, self.scroll.y, self.get_time(),
+                            self.scroll.x, self.scroll.y, self.modifier_state, self.get_time(),
                             actor_name(self.get_source()))
         elif self.type() == Clutter.EventType.STAGE_STATE:
             return '<Stage state %s on %s>' % (self.get_flags(),
