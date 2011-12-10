@@ -67,9 +67,9 @@ if __name__ == "__main__":
     stage.connect("destroy", Clutter.main_quit)
 
     star_actor = StarActor()
-    star_actor.set_size(100, 100)
+    star_actor.set_size(300, 300)
 
-    color = Clutter.Color.from_string("yellow")
+    color = Clutter.Color.from_string("black")
     star_actor.set_color(color)
 
     click_action = Clutter.ClickAction()
