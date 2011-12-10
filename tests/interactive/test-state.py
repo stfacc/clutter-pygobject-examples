@@ -69,7 +69,7 @@ if __name__ == "__main__":
         actor = Group(
             255 * (1.0 * col / COLS),
             50,
-                        255 * (1.0 * row / ROWS),
+            255 * (1.0 * row / ROWS),
             255
         )
 
