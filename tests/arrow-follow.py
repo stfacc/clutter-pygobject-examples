@@ -27,8 +27,8 @@ class Arrow(Clutter.Actor):
         Cogl.Path.fill()
 
     def move_towards(self, x, y):
-        arrow.animate(Clutter.AnimationMode.EASE_OUT_SINE, 250, "x", x)
-        arrow.animate(Clutter.AnimationMode.EASE_OUT_SINE, 250, "y", y)
+        self.animate(Clutter.AnimationMode.EASE_OUT_SINE, 250, "x", x)
+        self.animate(Clutter.AnimationMode.EASE_OUT_SINE, 250, "y", y)
 
     def point_towards(self, px, py):
         def dotproduct(v1, v2):
